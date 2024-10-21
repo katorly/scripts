@@ -1,13 +1,16 @@
-# Debian Init Script
-Init Debian/Ubuntu system.
+# Debian Scripts
+Scripts under this folder can be used in Debian/Ubuntu.
 
-## Features
+## init.sh: Init System Script
+Initialize a freshly-installed system.
+
+### Features
 - Change SSH port
 - Create a non-root user with sudo privileges
 - Install public key for user
 - Disable root login and password authentication
 
-## Usage
+### Usage
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/katorly/scripts/main/debian/init.sh)
 ```
