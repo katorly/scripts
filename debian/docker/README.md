@@ -15,3 +15,5 @@ or
 ```bash
 bash <(wget -qO- https://raw.githubusercontent.com/katorly/scripts/main/debian/docker/install.sh)
 ```
+
+After execution, reboot the system as soon as possible to make the changes to `/etc/docker/daemon.json` take effect.
