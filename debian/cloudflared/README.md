@@ -1,4 +1,4 @@
-## Install Docker
+## Install Cloudflared
 Install cloudflared.
 
 ### Features
