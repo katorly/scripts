@@ -4,7 +4,7 @@ clear
 echo -e "====== Debian init script - by katorly ======="
 
 while true; do
-    read -p "Enter SSH port: " SSH_PORT
+    read -p "Enter SSH port (1-65535): " SSH_PORT
     if [[ $SSH_PORT -ge 1 && $SSH_PORT -le 65535 ]]; then
         break
     else
