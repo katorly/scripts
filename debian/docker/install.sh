@@ -7,7 +7,7 @@ DOCKER_SOURCE=https://download.docker.com
 LOCAL_IP=$(curl -s ifconfig.me)
 IP_LOCATION=$(curl -s "https://ipapi.co/${LOCAL_IP}/country/")
 if [ "$IP_LOCATION" == "CN" ]; then
-    echo -e "Your IP may be located in China."
+    echo -e "Your machine may be located in China."
     read -p "Would you like to install Docker CE from USTC mirror site? (y|n) " MIRROR_PLEASE
     if [ "$MIRROR_PLEASE" == "y" ]; then
         DOCKER_SOURCE=https://mirrors.ustc.edu.cn/docker-ce
@@ -34,23 +34,19 @@ sudo groupadd docker
 sudo usermod -aG docker $USER
 # newgrp docker
 
-echo -e "\n\nLimiting Docker logs size and using ufw to manage Docker ports..."
+echo -e "\n\nLimiting Docker logs size..."
 LOG_CONFIG='{
   "log-driver": "json-file",
   "log-opts": {
     "max-size": "500m",
     "max-file": "3"
-  },
-  "iptables": false
+  }
 }'
 if [ ! -f /etc/docker/daemon.json ]; then
     sudo bash -c "echo '$LOG_CONFIG' > /etc/docker/daemon.json"
 else
     echo "$LOG_CONFIG" | sudo jq -s '.[0] + .[1]' - /etc/docker/daemon.json | sudo tee /etc/docker/temp.json > /dev/null && sudo mv /etc/docker/temp.json /etc/docker/daemon.json
 fi
-sudo sed -i 's/^DEFAULT_FORWARD_POLICY=.*/DEFAULT_FORWARD_POLICY="ACCEPT"/' /etc/default/ufw
-sudo sed -i 's/^#\?DOCKER_OPTS=.*/DOCKER_OPTS="--dns 8.8.8.8 --dns 8.8.4.4 -iptables=false"/' /etc/default/docker
-sudo sed -i '/\*filter/i *nat\n:POSTROUTING ACCEPT [0:0]\n-A POSTROUTING ! -o docker0 -s 172.17.0.0/16 -j MASQUERADE\n-A POSTROUTING ! -o docker0 -s 172.18.0.0/15 -j MASQUERADE\n-A POSTROUTING ! -o docker0 -s 172.20.0.0/14 -j MASQUERADE\n-A POSTROUTING ! -o docker0 -s 172.24.0.0/13 -j MASQUERADE\n-A POSTROUTING ! -o docker0 -s 172.32.0.0/11 -j MASQUERADE\n-A POSTROUTING ! -o docker0 -s 172.64.0.0/10 -j MASQUERADE\n-A POSTROUTING ! -o docker0 -s 172.128.0.0/9 -j MASQUERADE\nCOMMIT\n' /etc/ufw/before.rules
 
 echo -e "\n\nPlease reboot as soon as possible to apply changes."
 echo -e "============= Done! - by katorly =============\n\n"
