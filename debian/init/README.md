@@ -2,11 +2,13 @@
 Initialize a freshly-installed system.
 
 ### Features
-- Install sudo, ufw, curl, wget and vim
-- Change SSH port
-- Create a non-root user with sudo privileges
+- Install basic packages: Install sudo, ufw, curl, wget and vim
+- Add non-root user: Create a non-root user with sudo privileges
 - Install public key for user
-- Disable root login and password authentication
+- Forbid root login
+- Forbid password login
+- Change SSH port
+- Configure Pubkey: Install Pubkey authentication for user
 
 ### Usage
 ```bash
@@ -16,6 +18,3 @@ or
 ```bash
 bash <(wget -qO- https://raw.githubusercontent.com/katorly/scripts/main/debian/init/init.sh)
 ```
-Default password is `123@@@`.
-
-After execution, login with your credentials and you will be prompted to change the default password.
