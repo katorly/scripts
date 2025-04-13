@@ -9,6 +9,7 @@ Initialize a freshly-installed system.
 - Forbid password login
 - Change SSH port
 - Configure Pubkey: Install Pubkey authentication for user
+- Enable swap: Create swapfile and set swappiness
 
 ### Usage
 ```bash

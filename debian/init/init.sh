@@ -40,6 +40,30 @@ forbid_root_login() {
     echo -e "\n\nForbid root login successfully!"
 }
 
+configure_pubkey() {
+    clear
+    read -p "Enter your username: " SSH_USERNAME
+    read -p "Enter your public key: " PUBKEY
+
+    echo -e "\n\nConfiguring Pubkey for user..."
+
+    if ! id "$SSH_USERNAME" &>/dev/null; then
+        echo "Error: User $SSH_USERNAME does not exist!"
+        return 1
+    fi
+
+    USER_HOME=$(eval echo ~$SSH_USERNAME)
+    mkdir -p $USER_HOME/.ssh
+    echo -e "$PUBKEY" > $USER_HOME/.ssh/authorized_keys
+    chown -R $SSH_USERNAME:$SSH_USERNAME $USER_HOME/.ssh
+    chmod 600 $USER_HOME/.ssh/authorized_keys
+
+    grep -q "^#\?PubkeyAuthentication " /etc/ssh/sshd_config && sed -i "s/^#\?PubkeyAuthentication .*/PubkeyAuthentication yes/" /etc/ssh/sshd_config || echo -e "PubkeyAuthentication yes" >> /etc/ssh/sshd_config
+    service sshd restart
+
+    echo -e "\n\nConfigure Pubkey successfully!"
+}
+
 forbid_password_login() {
     clear
     echo -e "\n\nForbidding password login..."
@@ -75,28 +99,33 @@ change_ssh_port() {
     echo -e "\n\nChange SSH port successfully!"
 }
 
-configure_pubkey() {
-    clear
-    read -p "Enter your username: " SSH_USERNAME
-    read -p "Enter your public key: " PUBKEY
+enable_swap() {
+    read -p "Enter the size of swap (GB): " SWAP_SIZE
+    while true; do
+        read -p "Enter swappiness you want (0-100): " SWAPPINESS
+        if [[ $SWAPPINESS -ge 0 && $SWAPPINESS -le 100 ]]; then
+            break
+        else
+            echo "Swappiness must be between 0 and 100!"
+        fi
+    done
 
-    echo -e "\n\nConfiguring Pubkey for user..."
+    echo -e "\n\nRemoving current swapfile..."
+    sudo apt-get update -y && sudo apt-get install -y util-linux
+    sudo swapoff -v /swapfile
+    sudo rm /swapfile
 
-    if ! id "$SSH_USERNAME" &>/dev/null; then
-        echo "Error: User $SSH_USERNAME does not exist!"
-        return 1
-    fi
+    echo -e "\n\nCreating and applying swapfile..."
+    sudo fallocate -l ${SWAP_SIZE}G /swapfile
+    sudo chmod 600 /swapfile
+    sudo mkswap /swapfile
+    sudo swapon /swapfile
 
-    USER_HOME=$(eval echo ~$SSH_USERNAME)
-    mkdir -p $USER_HOME/.ssh
-    echo -e "$PUBKEY" > $USER_HOME/.ssh/authorized_keys
-    chown -R $SSH_USERNAME:$SSH_USERNAME $USER_HOME/.ssh
-    chmod 600 $USER_HOME/.ssh/authorized_keys
+    sudo bash -c "echo '/swapfile swap swap defaults 0 0' >> /etc/fstab"
+    sudo bash -c "echo 'vm.swappiness=$SWAPPINESS' >> /etc/sysctl.conf"
+    sudo sysctl -p
 
-    grep -q "^#\?PubkeyAuthentication " /etc/ssh/sshd_config && sed -i "s/^#\?PubkeyAuthentication .*/PubkeyAuthentication yes/" /etc/ssh/sshd_config || echo -e "PubkeyAuthentication yes" >> /etc/ssh/sshd_config
-    service sshd restart
-
-    echo -e "\n\nConfigure Pubkey successfully!"
+    echo -e "\n\nEnable swap successfully!"
 }
 
 show_menu() {
@@ -104,9 +133,10 @@ show_menu() {
     echo -e "1. Install basic packages"
     echo -e "2. Add non-root user"
     echo -e "3. Forbid root login"
-    echo -e "4. Forbid password login"
-    echo -e "5. Change SSH port"
-    echo -e "6. Configure Pubkey"
+    echo -e "4. Configure Pubkey"
+    echo -e "5. Forbid password login"
+    echo -e "6. Change SSH port"
+    echo -e "7. Enable swap"
     echo -e "0. Exit"
     echo -e "=============================================="
 }
@@ -120,9 +150,10 @@ while true; do
         1) install_packages;;
         2) add_non_root_user;;
         3) forbid_root_login;;
-        4) forbid_password_login;;
-        5) change_ssh_port;;
-        6) configure_pubkey;;
+        4) configure_pubkey;;
+        5) forbid_password_login;;
+        6) change_ssh_port;;
+        7) enable_swap;;
         0) 
             echo -e "\nThanks for using this script!"
             exit 0
