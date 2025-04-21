@@ -100,6 +100,7 @@ change_ssh_port() {
 }
 
 enable_swap() {
+    clear
     read -p "Enter the size of swap (GB): " SWAP_SIZE
     while true; do
         read -p "Enter swappiness you want (0-100): " SWAPPINESS
