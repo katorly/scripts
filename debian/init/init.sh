@@ -35,7 +35,7 @@ forbid_root_login() {
     echo -e "\n\nForbidding root login..."
 
     grep -q "^#\?PermitRootLogin " /etc/ssh/sshd_config && sed -i "s/^#\?PermitRootLogin .*/PermitRootLogin no/" /etc/ssh/sshd_config || echo -e "PermitRootLogin no" >> /etc/ssh/sshd_config
-    service sshd restart
+    systemctl restart ssh
 
     echo -e "\n\nForbid root login successfully!"
 }
@@ -59,7 +59,7 @@ configure_pubkey() {
     chmod 600 $USER_HOME/.ssh/authorized_keys
 
     grep -q "^#\?PubkeyAuthentication " /etc/ssh/sshd_config && sed -i "s/^#\?PubkeyAuthentication .*/PubkeyAuthentication yes/" /etc/ssh/sshd_config || echo -e "PubkeyAuthentication yes" >> /etc/ssh/sshd_config
-    service sshd restart
+    systemctl restart ssh
 
     echo -e "\n\nConfigure Pubkey successfully!"
 }
@@ -69,7 +69,7 @@ forbid_password_login() {
     echo -e "\n\nForbidding password login..."
 
     grep -q "^#\?PasswordAuthentication " /etc/ssh/sshd_config && sed -i "s/^#\?PasswordAuthentication .*/PasswordAuthentication no/" /etc/ssh/sshd_config || echo -e "PasswordAuthentication no" >> /etc/ssh/sshd_config
-    service sshd restart
+    systemctl restart ssh
 
     echo -e "\n\nForbid password login successfully!"
 }
@@ -88,10 +88,17 @@ change_ssh_port() {
     echo -e "\n\nChanging SSH port..."
 
     grep -q "^#\?Port " /etc/ssh/sshd_config && sed -i "s/^#\?Port .*/Port $SSH_PORT/" /etc/ssh/sshd_config || echo -e "Port $SSH_PORT" >> /etc/ssh/sshd_config
-    grep -q "^ListenStream=" /lib/systemd/system/ssh.socket && sed -i "s/^ListenStream=.*/ListenStream=$SSH_PORT/" /lib/systemd/system/ssh.socket || sed -i "/\[Socket\]/a ListenStream=$SSH_PORT" /lib/systemd/system/ssh.socket
-    service sshd restart
+
+    mkdir -p /etc/systemd/system/ssh.socket.d
+    cat > /etc/systemd/system/ssh.socket.d/override.conf <<EOF
+[Socket]
+ListenStream=
+ListenStream=$SSH_PORT
+EOF
+
     systemctl daemon-reload
-    systemctl reload ssh
+    systemctl restart ssh.socket
+    systemctl restart ssh
 
     ufw allow $SSH_PORT/tcp
     ufw reload
@@ -122,9 +129,9 @@ enable_swap() {
     sudo mkswap /swapfile
     sudo swapon /swapfile
 
-    sudo bash -c "echo '/swapfile swap swap defaults 0 0' >> /etc/fstab"
-    sudo bash -c "echo 'vm.swappiness=$SWAPPINESS' >> /etc/sysctl.conf"
-    sudo sysctl -p
+    grep -q '/swapfile' /etc/fstab || sudo bash -c "echo '/swapfile swap swap defaults 0 0' >> /etc/fstab"
+    echo "vm.swappiness=$SWAPPINESS" | sudo tee /etc/sysctl.d/99-swappiness.conf > /dev/null
+    sudo sysctl -p /etc/sysctl.d/99-swappiness.conf
 
     echo -e "\n\nEnable swap successfully!"
 }
