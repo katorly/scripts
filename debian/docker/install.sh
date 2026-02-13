@@ -15,17 +15,20 @@ if [ "$IP_LOCATION" == "CN" ]; then
 fi
 
 echo -e "\n\nUninstalling old versions if any..."
-for pkg in docker.io docker-doc docker-compose podman-docker containerd runc; do sudo apt-get remove $pkg; done
+sudo apt remove $(dpkg --get-selections docker.io docker-compose docker-doc podman-docker containerd runc | cut -f1)
 
 echo -e "\n\nInstalling packages..."
-sudo apt-get update -y && sudo apt-get install -y sudo ufw ca-certificates curl jq
+sudo apt-get update -y && sudo apt-get install -y ca-certificates curl
 sudo install -m 0755 -d /etc/apt/keyrings
 sudo curl -fsSL $DOCKER_SOURCE/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
 sudo chmod a+r /etc/apt/keyrings/docker.asc
-echo \
-    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] $DOCKER_SOURCE/linux/debian \
-    $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-    sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: $DOCKER_SOURCE/linux/debian
+Suites: $(. /etc/os-release && echo "$VERSION_CODENAME")
+Components: stable
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
 sudo apt-get update -y
 
 echo -e "\n\nInstalling Docker..."
