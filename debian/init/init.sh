@@ -98,7 +98,6 @@ EOF
 
     systemctl daemon-reload
     systemctl restart ssh.socket
-    systemctl restart ssh
 
     ufw allow $SSH_PORT/tcp
     ufw reload
